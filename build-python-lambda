@@ -1,0 +1,32 @@
+#!/bin/sh
+
+set -e
+
+if [ ! -d "/src" ]; then
+  echo "use -v $(pwd)/src:/src to mount the source!"
+  exit 1
+fi
+
+if [ ! -d "/build" ]; then
+  echo "use -v $(pwd)/build:/build to mount the build!"
+  exit 1
+fi
+
+cd /src/
+rm -rf /build/*
+for d in */ ; do
+    lambda=${d%/}
+    echo "INFO: Creating $lambda"
+    mkdir -p /temp/$lambda/
+    cd /temp/$lambda/
+    cp -r /src/$lambda/* .
+    if [ -f "./requirements.txt" ]; then
+        echo "INFO: Found requirements.txt, installing dependencies"
+        pip install -q -r ./requirements.txt -t /temp/$lambda/
+    else
+        echo "INFO: No requirements.txt found, skipping."
+    fi
+    echo "INFO: Zipping..."
+    zip --quiet -9r /build/$lambda.zip .
+    echo "INFO: DONE"
+done
